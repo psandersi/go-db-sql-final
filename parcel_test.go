@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"math/rand"
 	"testing"
 	"time"
@@ -40,20 +41,29 @@ func TestAddGetDelete(t *testing.T) {
 
 	id, err := store.Add(parcel)
 	require.NoError(t, err)
-	assert.NotNil(t, id)
+	assert.NotEmpty(t, id)
 
 	parcels, err := store.Get(id)
+	set1 := Parcel{
+		Client:    parcel.Client,
+		Status:    parcel.Status,
+		Address:   parcel.Address,
+		CreatedAt: parcel.CreatedAt,
+	}
+	set2 := Parcel{
+		Client:    parcels.Client,
+		Status:    parcels.Status,
+		Address:   parcels.Address,
+		CreatedAt: parcels.CreatedAt,
+	}
 	require.NoError(t, err)
 	assert.NotEmpty(t, parcels.Number)
-	assert.Equal(t, parcel.Client, parcels.Client)
-	assert.Equal(t, parcel.CreatedAt, parcels.CreatedAt)
-	assert.Equal(t, parcel.Status, parcels.Status)
-	assert.Equal(t, parcel.Address, parcels.Address)
+	assert.Equal(t, set1, set2)
 
 	err = store.Delete(id)
 	require.NoError(t, err)
-	m, _ := store.Get(id)
-	require.Equal(t, "", m.Address)
+	_, err = store.Get(id)
+	require.Error(t, err)
 
 }
 
@@ -67,7 +77,7 @@ func TestSetAddress(t *testing.T) {
 
 	id, err := store.Add(parcel)
 	require.NoError(t, err)
-	assert.NotNil(t, id)
+	assert.NotEmpty(t, id)
 
 	newAddress := "new test address"
 	err = store.SetAddress(id, newAddress)
@@ -76,7 +86,6 @@ func TestSetAddress(t *testing.T) {
 	parcels, err := store.Get(id)
 	require.NoError(t, err)
 	assert.Equal(t, newAddress, parcels.Address)
-	assert.NotEqual(t, parcel.Address, parcels.Address)
 }
 
 // TestSetStatus проверяет обновление статуса
@@ -90,7 +99,7 @@ func TestSetStatus(t *testing.T) {
 
 	id, err := store.Add(parcel)
 	require.NoError(t, err)
-	assert.NotNil(t, id)
+	assert.NotEmpty(t, id)
 
 	err = store.SetStatus(id, ParcelStatusSent)
 	require.NoError(t, err)
@@ -123,7 +132,7 @@ func TestGetByClient(t *testing.T) {
 	for i := 0; i < len(parcels); i++ {
 		id, err := store.Add(parcels[i])
 		require.NoError(t, err)
-		assert.NotNil(t, id)
+		assert.NotEmpty(t, id)
 
 		parcels[i].Number = id
 
@@ -136,9 +145,13 @@ func TestGetByClient(t *testing.T) {
 	assert.Len(t, storedParcels, len(parcels))
 
 	for _, parcel := range storedParcels {
-		assert.Equal(t, parcel.Address, parcelMap[parcel.Number].Address)
-		assert.Equal(t, parcel.Client, parcelMap[parcel.Number].Client)
-		assert.Equal(t, parcel.CreatedAt, parcelMap[parcel.Number].CreatedAt)
-		assert.Equal(t, parcel.Status, parcelMap[parcel.Number].Status)
+		p, ok := parcelMap[parcel.Number]
+		if ok {
+			assert.Equal(t, parcel, p)
+		} else {
+			err = errors.New("parcel not found")
+		}
+
 	}
+	require.NoError(t, err)
 }
