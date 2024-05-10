@@ -25,20 +25,18 @@ func (s ParcelStore) Add(p Parcel) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	// верните идентификатор последней добавленной записи
+
 	return int(id), nil
 
 }
 
 func (s ParcelStore) Get(number int) (Parcel, error) {
 
-	// реализуйте чтение строки по заданному number
-	// здесь из таблицы должна вернуться только одна строка
 	rows, err := s.db.Query("SELECT number,client,status,address,created_at FROM parcel WHERE number = :number", sql.Named("number", number))
 	if err != nil {
 		return Parcel{}, err
 	}
-	// заполните объект Parcel данными из таблицы
+
 	p := Parcel{}
 	for rows.Next() {
 		err := rows.Scan(&p.Number, &p.Client, &p.Status, &p.Address, &p.CreatedAt)
@@ -47,19 +45,16 @@ func (s ParcelStore) Get(number int) (Parcel, error) {
 		}
 	}
 	return p, nil
-	// заполните объект Parcel данными из таблицы
+
 }
 
 func (s ParcelStore) GetByClient(client int) ([]Parcel, error) {
-	// реализуйте чтение строк из таблицы parcel по заданному client
-	// здесь из таблицы может вернуться несколько строк
 
-	// заполните срез Parcel данными из таблицы
 	rows, err := s.db.Query("SELECT number,client,status,address,created_at FROM parcel WHERE client = :client", sql.Named("client", client))
 	if err != nil {
 		return nil, err
 	}
-	// заполните срез Parcel данными из таблицы
+
 	var res []Parcel
 	for rows.Next() {
 		p := Parcel{}
@@ -87,8 +82,7 @@ func (s ParcelStore) SetStatus(number int, status string) error {
 }
 
 func (s ParcelStore) SetAddress(number int, address string) error {
-	// реализуйте обновление адреса в таблице parcel
-	// менять адрес можно только если значение статуса registered
+
 	_, err := s.db.Exec("UPDATE parcel SET address = :address WHERE number = :number and status = 'registered'",
 		sql.Named("address", address),
 		sql.Named("number", number))
