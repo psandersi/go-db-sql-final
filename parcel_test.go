@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"errors"
 	"math/rand"
 	"testing"
 	"time"
@@ -44,21 +43,10 @@ func TestAddGetDelete(t *testing.T) {
 	assert.NotEmpty(t, id)
 
 	parcels, err := store.Get(id)
-	set1 := Parcel{
-		Client:    parcel.Client,
-		Status:    parcel.Status,
-		Address:   parcel.Address,
-		CreatedAt: parcel.CreatedAt,
-	}
-	set2 := Parcel{
-		Client:    parcels.Client,
-		Status:    parcels.Status,
-		Address:   parcels.Address,
-		CreatedAt: parcels.CreatedAt,
-	}
 	require.NoError(t, err)
 	assert.NotEmpty(t, parcels.Number)
-	assert.Equal(t, set1, set2)
+	parcels.Number = 0
+	assert.Equal(t, parcel, parcels)
 
 	err = store.Delete(id)
 	require.NoError(t, err)
@@ -106,7 +94,7 @@ func TestSetStatus(t *testing.T) {
 
 	parcels, err := store.Get(id)
 	require.NoError(t, err)
-	assert.NotEqual(t, parcel.Status, parcels.Status)
+	assert.Equal(t, ParcelStatusSent, parcels.Status)
 }
 
 // TestGetByClient проверяет получение посылок по идентификатору клиента
@@ -146,12 +134,7 @@ func TestGetByClient(t *testing.T) {
 
 	for _, parcel := range storedParcels {
 		p, ok := parcelMap[parcel.Number]
-		if ok {
-			assert.Equal(t, parcel, p)
-		} else {
-			err = errors.New("parcel not found")
-		}
-
+		require.True(t, ok)
+		assert.Equal(t, parcel, p)
 	}
-	require.NoError(t, err)
 }
